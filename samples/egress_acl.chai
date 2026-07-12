@@ -1,0 +1,13 @@
+# ACL / firewall paradigm: `mode first_match`, first matching rule wins, order matters.
+#
+# An egress allow/deny list for Aria's tool calls, read top to bottom like an
+# ipfw ruleset. A small refund is allowed by an early rule that sits *before* the
+# broad refund deny, so ordering is the control. Under the default deny-override
+# mode the broad deny would always win; here the specific allow takes priority.
+
+mode first_match
+
+@id("allow-lookup") permit when action == "lookup_account"
+@id("allow-small")  permit when action == "issue_refund" and args.amount <= 100
+@id("deny-refund")  deny   when action == "issue_refund"
+@id("deny-rest")    deny   when true

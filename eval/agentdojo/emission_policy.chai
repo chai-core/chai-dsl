@@ -1,0 +1,5 @@
+# Emission-channel governance for the agent evaluation. The agent's output is run
+# through AFC + this policy; a secret is denied (dropped), PII is redacted.
+@id("secret") deny   when dlp_facts.secrets_found == true
+@id("pii")    redact when dlp_facts.pii_confidence > 0.4
+@id("clean")  permit when dlp_facts.pii_confidence <= 0.4

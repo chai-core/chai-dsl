@@ -1,0 +1,13 @@
+name = "ChaiProofs"
+defaultTargets = ["ChaiProofs"]
+
+[[lean_lib]]
+name = "ChaiProofs"
+
+[[lean_exe]]
+name = "chai_oracle"
+root = "DrtOracle"
+
+[[lean_exe]]
+name = "chai_emit_oracle"
+root = "EmitOracle"

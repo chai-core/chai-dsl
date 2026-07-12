@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A Tour of Chai — how the policy language and fail-closed runtime work</title>
+<meta name="description" content="A guided tour of Chai: the Cedar-shaped policy language, the AFC→ESP→Emission three-layer runtime, and how it governs what an AI agent may emit, streaming and fail-closed." />
+<link rel="canonical" href="https://chai-core.github.io/chai-dsl/tour.html" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Chai" />
+<meta property="og:title" content="A Tour of Chai" />
+<meta property="og:description" content="A guided tour of Chai's policy language and its AFC→ESP→Emission three-layer, fail-closed runtime for governing AI-agent emission." />
+<meta property="og:url" content="https://chai-core.github.io/chai-dsl/tour.html" />
+<meta property="og:image" content="https://chai-core.github.io/chai-dsl/chai.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="A Tour of Chai" />
+<meta name="twitter:description" content="A guided tour of Chai's policy language and its fail-closed, three-layer runtime for governing AI-agent emission." />
+<meta name="twitter:image" content="https://chai-core.github.io/chai-dsl/chai.png" />
+<link rel="icon" href="chai.png" />
+<style>
+  :root { --bg:#0f1115; --panel:#171a21; --ink:#e6e6e6; --muted:#8b93a7; --line:#262b36; --accent:#2d6cdf; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  header { display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--line); }
+  header img { width:40px; height:40px; border-radius:9px; }
+  header h1 { margin:0; font-size:16px; } header a { color:var(--accent); text-decoration:none; font-size:13px; }
+  .layout { display:grid; grid-template-columns:230px 1fr; min-height:calc(100vh - 66px); }
+  nav { border-right:1px solid var(--line); padding:10px 0; overflow-y:auto; }
+  nav button { display:block; width:100%; text-align:left; background:transparent; border:0; color:var(--muted);
+               padding:7px 18px; cursor:pointer; font:inherit; }
+  nav button.active { color:var(--ink); background:#1d2230; border-left:2px solid var(--accent); }
+  main { padding:22px 28px; max-width:900px; }
+  main h2 { margin:0 0 4px; font-size:18px; } .lead { color:var(--muted); margin:0 0 16px; }
+  main p { margin:10px 0; } main code { color:#9ad; } main b { color:var(--ink); }
+  .ex { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; margin:14px 0; }
+  .ex label { color:var(--muted); font-size:12px; display:block; margin:6px 0 4px; }
+  .ex textarea { width:100%; background:#0b0d11; color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:9px; font:inherit; resize:vertical; }
+  .pol { height:90px; } .ctx { height:64px; }
+  .ex .btns { margin-top:10px; }
+  button.run { background:var(--accent); color:#fff; border:0; padding:7px 16px; border-radius:6px; cursor:pointer; font:inherit; }
+  button.run:hover { background:#3b78e8; }
+  a.openpg { color:var(--muted); margin-left:12px; font-size:13px; text-decoration:none; } a.openpg:hover { color:var(--ink); }
+  .out { margin-top:10px; padding:9px 11px; border-radius:6px; border:1px solid var(--line); background:#0b0d11; white-space:pre-wrap; min-height:20px; }
+  .allow { color:#4ade80; font-weight:700; } .deny { color:#f87171; font-weight:700; } .other { color:#fbbf24; font-weight:700; }
+  .muted { color:var(--muted); }
+  .nav-foot { padding:10px 18px; border-top:1px solid var(--line); display:flex; justify-content:space-between; }
+  .nav-foot button { background:transparent; border:1px solid var(--line); color:var(--muted); padding:6px 14px; border-radius:6px; cursor:pointer; font:inherit; }
+</style>
+</head>
+<body>
+<header>
+  <img src="chai.png" alt="" />
+  <h1>A Tour of Chai</h1>
+  <a href="index.html">→ open the full Playground</a>
+</header>
+<div class="layout">
+  <nav id="nav"></nav>
+  <main>
+    <h2 id="title"></h2>
+    <p class="lead" id="lead"></p>
+    <div id="body"></div>
+    <div class="nav-foot">
+      <button onclick="go(cur-1)">‹ prev</button>
+      <button onclick="go(cur+1)">next ›</button>
+    </div>
+  </main>
+</div>
+
+<script>
+// ---- the real engine, in WASM (same as production) ----
+let evaluate = null; const enc = new TextEncoder(), dec = new TextDecoder();
+(async () => {
+  const bytes = await (await fetch('./chai_dsl.wasm')).arrayBuffer();
+  const w = (await WebAssembly.instantiate(bytes, {})).instance.exports;
+  evaluate = (policy, context) => {
+    const pb = enc.encode(policy), cb = enc.encode(context);
+    const pp = w.chai_alloc(pb.length); new Uint8Array(w.memory.buffer, pp, pb.length).set(pb);
+    const cp = w.chai_alloc(cb.length); new Uint8Array(w.memory.buffer, cp, cb.length).set(cb);
+    const o = w.chai_evaluate(pp, pb.length, cp, cb.length);
+    const len = new DataView(w.memory.buffer).getUint32(o, true);
+    const s = dec.decode(new Uint8Array(w.memory.buffer, o + 4, len));
+    w.chai_free(pp, pb.length); w.chai_free(cp, cb.length); w.chai_free(o, 4 + len);
+    return JSON.parse(s);
+  };
+  go(0);
+})();
+
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+// ---- lessons (all live-runnable: context-only, no entity store needed) ----
+const L = [
+{ title: "Welcome", lead: "Chai is a small policy language for governing what an AI agent does and emits.",
+  body: `<p>A policy is a list of <b>rules</b>. Each rule has an <b>effect</b> (permit / forbid / redact / …) and a <b>condition</b>. You give a <b>request context</b> (JSON); Chai returns a <b>decision</b>.</p>
+  <p>Every example below is editable and runs the real engine right here. Hit <b>Run</b>.</p>`,
+  ex: [{ policy:'permit when true', ctx:'{}' }] },
+
+{ title: "Your first rule", lead: "Conditions read fields from the request context.",
+  body: `<p><code>subject.trust_tier</code> reads a field. Change the tier in the context and re-run; at <code>&lt; 3</code> no rule matches, so the decision is <b>Deny</b> (default-deny).</p>`,
+  ex: [{ policy:'@id("ok") permit when subject.trust_tier >= 3', ctx:'{ "subject": { "trust_tier": 4 } }' }] },
+
+{ title: "Effects & most-restrictive-wins", lead: "When several rules match, the most restrictive wins.",
+  body: `<p>The lattice is <code>DENY &gt; REQUIRE_HUMAN &gt; DEFER &gt; REDACT &gt; DOWNGRADE &gt; ALLOW</code>, and it's <b>order-independent</b>. Here both rules match; <code>forbid</code> wins.</p>`,
+  ex: [{ policy:'permit when subject.trust_tier >= 3\nforbid when subject.flagged == true',
+         ctx:'{ "subject": { "trust_tier": 9, "flagged": true } }' }] },
+
+{ title: "Conditions", lead: "Booleans: and / or / not, comparisons, contains.",
+  body: `<p>Combine checks with <code>and</code>, <code>or</code>, <code>not</code>. <code>contains</code> tests list membership.</p>`,
+  ex: [{ policy:'permit when subject.trust_tier >= 3 and (subject.role == "admin" or subject.capabilities contains "write")',
+         ctx:'{ "subject": { "trust_tier": 5, "role": "user", "capabilities": ["read","write"] } }' }] },
+
+{ title: "Output governance", lead: "Govern what an agent emits: redact PII, block secrets.",
+  body: `<p>Conditions read <b>alignment facts</b> computed by the AFC layer, here <code>dlp_facts</code>. Try flipping <code>secrets_found</code> or lowering <code>pii_confidence</code>.</p>`,
+  ex: [{ policy:'@id("secret") deny   when dlp_facts.secrets_found == true\n@id("pii")    redact when dlp_facts.pii_confidence > 0.4\n@id("clean")  permit when dlp_facts.pii_confidence <= 0.4',
+         ctx:'{ "dlp_facts": { "pii_confidence": 0.6, "secrets_found": false } }' }] },
+
+{ title: "Safety: halt for a human", lead: "require_human pauses the stream for review.",
+  body: `<p><code>require_human</code> is more restrictive than redact but less than deny. Raise <code>harm</code> past the thresholds.</p>`,
+  ex: [{ policy:'@id("block")  deny          when safety_facts.harm > 0.9\n@id("review") require_human when safety_facts.harm > 0.6\n@id("soften") downgrade     when safety_facts.harm > 0.3\n@id("ok")     permit        when true',
+         ctx:'{ "safety_facts": { "harm": 0.7 } }' }] },
+
+{ title: "Tool-call authorization", lead: "Gate MCP tool calls by identity, tool, and arguments.",
+  body: `<p>For MCP, the tool name is <code>action</code> and its arguments are <code>args.*</code>. This blocks bulk reads and untrusted writes.</p>`,
+  ex: [{ policy:'@id("untrusted") forbid when subject.trust_tier < 3\n@id("bulk")      forbid when args.limit >= 100\n@id("ok")        permit when true',
+         ctx:'{ "subject": { "trust_tier": 4 }, "action": "db.read", "args": { "limit": 500 } }' }] },
+
+{ title: "Dataflow / exfiltration", lead: "Deny untrusted data reaching a sink.",
+  body: `<p>The taint layer sets <code>tooltrace.tainted_sink</code> when untrusted data flows into an outbound call. A single rule blocks it.</p>`,
+  ex: [{ policy:'@id("exfil") forbid when tooltrace.tainted_sink == true\n@id("ok")    permit when true',
+         ctx:'{ "tooltrace": { "tainted_sink": true } }' }] },
+
+{ title: "Default-deny & errors", lead: "No match ⇒ deny; an errored condition can't grant.",
+  body: `<p>If nothing matches, the decision is <b>Deny</b>: fail-closed. A condition that errors (e.g. comparing a number to a string) is recorded in <code>errors</code> and skipped, never silently allowed.</p>`,
+  ex: [{ policy:'permit when dlp_facts.pii > "oops"', ctx:'{ "dlp_facts": { "pii": 0.1 } }' }] },
+
+{ title: "Where next", lead: "Take any example into the full tools.",
+  body: `<p>Every example here has <b>open in Playground</b>: it carries the policy + context across so you can keep editing, share a link, or export a <code>chai test</code> file. From the CLI: <code>chai repl</code>, <code>chai lint</code>, <code>chai test</code>.</p>
+  <p><a href="index.html">→ open the Playground</a></p>`,
+  ex: [{ policy:'@id("ok") permit when subject.trust_tier >= 3', ctx:'{ "subject": { "trust_tier": 4 } }' }] },
+];
+
+let cur = 0;
+const nav = document.getElementById('nav');
+nav.innerHTML = L.map((l, i) => `<button data-i="${i}" onclick="go(${i})">${i+1}. ${l.title}</button>`).join('');
+
+function go(i) {
+  if (i < 0 || i >= L.length) return;
+  cur = i;
+  [...nav.children].forEach((b, j) => b.classList.toggle('active', j === i));
+  const l = L[i];
+  document.getElementById('title').textContent = l.title;
+  document.getElementById('lead').textContent = l.lead;
+  const body = document.getElementById('body');
+  body.innerHTML = l.body + l.ex.map((e, k) => exampleHtml(e, k)).join('');
+  window.scrollTo(0, 0);
+}
+
+function exampleHtml(e, k) {
+  return `<div class="ex">
+    <label>policy</label><textarea class="pol" id="pol${k}">${esc(e.policy)}</textarea>
+    <label>request context (JSON)</label><textarea class="ctx" id="ctx${k}">${esc(e.ctx)}</textarea>
+    <div class="btns"><button class="run" onclick="run(${k})">Run</button>
+      <a class="openpg" id="pg${k}" href="#">open in Playground ↗</a></div>
+    <div class="out muted" id="out${k}">(click Run)</div>
+  </div>`;
+}
+
+function run(k) {
+  const out = document.getElementById('out'+k);
+  if (!evaluate) { out.textContent = 'engine loading…'; return; }
+  const pol = document.getElementById('pol'+k).value, ctx = document.getElementById('ctx'+k).value;
+  // keep the "open in Playground" link in sync with current edits
+  document.getElementById('pg'+k).href = 'index.html#' + btoa(unescape(encodeURIComponent(JSON.stringify({ r: pol, c: ctx }))));
+  try { JSON.parse(ctx); } catch (e) { out.className='out'; out.innerHTML = '<span class="deny">context not JSON: '+esc(e.message)+'</span>'; return; }
+  const d = evaluate(pol, ctx);
+  out.className = 'out';
+  if (d.parse_error) { out.innerHTML = '<span class="deny">parse error: '+esc(d.parse_error)+'</span>'; return; }
+  const cls = d.effect === 'Allow' ? 'allow' : (d.effect === 'Deny' ? 'deny' : 'other');
+  let h = '<span class="'+cls+'">'+d.effect+'</span>  <span class="muted">'+esc(d.reason)+'</span>';
+  if (d.rule_trace && d.rule_trace.length) h += '\nrules: '+esc(d.rule_trace.join(', '));
+  if (d.errors && d.errors.length) h += '\n<span class="deny">errors: '+esc(d.errors.join('; '))+'</span>';
+  out.innerHTML = h;
+}
+document.addEventListener('keydown', e => { if (e.key === 'ArrowRight') go(cur+1); if (e.key === 'ArrowLeft') go(cur-1); });
+</script>
+</body>
+</html>

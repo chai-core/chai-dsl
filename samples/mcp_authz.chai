@@ -1,0 +1,5 @@
+# MCP tool-call authorization: gate by agent trust + tool, with arg checks.
+@id("untrusted") forbid when subject.trust_tier < 3
+@id("no-bulk")   forbid when args.limit >= 100
+@id("read-ok")   permit when action == "db.read"
+@id("write-ok")  permit when action == "db.write" and subject.trust_tier >= 5

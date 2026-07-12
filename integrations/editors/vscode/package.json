@@ -1,0 +1,26 @@
+{
+  "name": "chai-policy",
+  "displayName": "Chai policy language",
+  "description": "Syntax highlighting and editor support for the Chai (chai_dsl) policy language (.chai).",
+  "version": "0.1.0",
+  "publisher": "chai",
+  "engines": { "vscode": "^1.60.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "chai",
+        "aliases": ["Chai", "chai"],
+        "extensions": [".chai"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "chai",
+        "scopeName": "source.chai",
+        "path": "./syntaxes/chai.tmLanguage.json"
+      }
+    ]
+  }
+}

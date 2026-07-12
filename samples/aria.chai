@@ -1,0 +1,13 @@
+# Aria, a customer-support agent. One policy that exercises every focus area:
+# authorization, output governance, dataflow/taint, streaming, and fail-closed.
+#
+# Aria answers customer questions from internal docs and can call tools like
+# lookup_account and issue_refund. Ticket text from the customer is untrusted.
+
+@id("untrusted-agent") forbid        when subject.trust_tier < 2
+@id("refund-cap")      forbid        when action == "issue_refund" and args.amount > 100
+@id("injected")        forbid        when tooltrace.tainted_sink == true
+@id("secret")          deny          when dlp_facts.secrets_found == true
+@id("harm")            require_human when safety_facts.harm > 0.6
+@id("pii")             redact        when dlp_facts.pii_confidence > 0.4
+@id("clean")           permit        when dlp_facts.pii_confidence <= 0.4

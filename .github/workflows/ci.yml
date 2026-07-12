@@ -1,0 +1,52 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: build + default tests
+        run: cargo test --verbose
+      - name: feature builds
+        run: |
+          cargo build -p chai_dsl --features server
+          cargo build -p chai_dsl --features icap
+      - name: Cedar conformance (must be 21/21)
+        run: cargo run -p chai_dsl --example cedar_conformance
+      - name: gdrive ReBAC
+        run: cargo run -p chai_dsl --example gdrive
+  smt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: install z3
+        run: sudo apt-get update && sudo apt-get install -y libz3-dev z3
+      - name: smt tests
+        run: cargo test -p chai_dsl --features smt
+  proofs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install Lean (elan)
+        run: |
+          curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+      - name: build proofs (no sorry)
+        run: cd formal && lake build
+  drt:
+    # Continuous differential testing: the production engine against the EXECUTED
+    # Lean model (cedar-drt style). Builds the Lean oracles, then fuzzes.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: install Lean (elan)
+        run: |
+          curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+      - name: build DRT oracles (executable Lean model)
+        run: cd formal && lake build chai_oracle chai_emit_oracle
+      - name: differential test engine vs Lean model
+        run: cargo test -p chai_dsl --test drt_decision --test drt_lean --test drt_emission

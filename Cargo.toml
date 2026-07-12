@@ -1,0 +1,7 @@
+# Workspace root. The verified engine (`chai-core`) and the runtime/exposure layer
+# (`chai_dsl`, in crates/chai) are separate crates; the vendored Cedar clone stays
+# out of the build graph.
+[workspace]
+members = ["crates/chai-core", "crates/chai"]
+exclude = ["third_party"]
+resolver = "2"

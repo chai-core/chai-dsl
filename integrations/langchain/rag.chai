@@ -1,0 +1,22 @@
+# rag.chai — governance for a RAG Q&A bot / document summarizer.
+# Point the Chai sidecar at this file: CHAI_POLICY_FILE=rag.chai
+#
+# One policy covers two boundaries. The retrieval path (authorize_tool_call) sees
+# `args`; the answer path (filter_tool_result) sees the streamed text with detector
+# facts. Rules that read detector facts are marked `lenient` so they stay inert on
+# the retrieval path, where those facts are absent, instead of denying it.
+
+# 1) Retrieval access control: only build the answer from documents this user may
+#    see. The app passes each chunk's doc id in `args.doc` and the user's allowed
+#    set in `subject.viewable`. Default-deny means an unlisted doc is dropped.
+@id("access") permit when args.doc in subject.viewable
+
+# 2) Answer emission: mask PII and refuse secrets in the streamed answer.
+@id("pii")    redact lenient when dlp_facts.pii_confidence > 0.4
+@id("secret") deny   lenient when dlp_facts.secrets_found == true
+@id("clean")  permit lenient when dlp_facts.pii_confidence <= 0.4
+
+# 3) Prompt-injection defense (optional). Fires only when an injection detector is
+#    wired into the sidecar's AFC (the built-in InjectionDetector or Lakera). With
+#    the default detectors `injection_facts` is absent, so this rule stays inert.
+@id("injection") deny lenient when injection_facts.injection_risk > 0.5

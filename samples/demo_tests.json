@@ -1,0 +1,8 @@
+{
+  "policy": "@id(\"ok\") permit when subject.trust_tier >= 3\n@id(\"secret\") deny when dlp_facts.secrets_found == true\n",
+  "scenarios": [
+    {"name": "high trust allowed", "context": {"subject": {"trust_tier": 4}}, "expect": "Allow"},
+    {"name": "low trust denied",   "context": {"subject": {"trust_tier": 1}}, "expect": "Deny"},
+    {"name": "secret blocked",     "context": {"subject": {"trust_tier": 9}, "dlp_facts": {"secrets_found": true}}, "expect": "Deny"}
+  ]
+}

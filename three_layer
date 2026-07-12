@@ -1,0 +1,203 @@
+\section{System Model}
+
+We formalize a three-layer architecture consisting of:
+
+\begin{itemize}
+\item \textbf{Chai}: an agent orchestration language producing draft outputs and tool actions,
+\item \textbf{Alignment Fact Calculator (AFC)}: a semantic sensor layer producing structured alignment evidence,
+\item \textbf{Emission Security Policy (ESP)}: a deterministic access control engine governing emission.
+\end{itemize}
+
+The execution pipeline is:
+
+\[
+\text{Chai} \rightarrow \text{AFC} \rightarrow \text{ESP} \rightarrow \text{Emission}
+\]
+
+\subsection{Entities}
+
+An emission attempt is represented as:
+
+\[
+\langle s, o, x, C \rangle
+\]
+
+where:
+
+\begin{itemize}
+\item $s$ is the \textbf{subject} (agent identity),
+\item $o$ is the \textbf{object} (emission target),
+\item $x$ is the \textbf{draft output},
+\item $C$ is the \textbf{execution context} (session metadata, environment, trace).
+\end{itemize}
+
+\subsection{Subject and Object Structures}
+
+Subjects are structured records:
+
+\[
+s =
+\{
+\texttt{agent\_id},
+\texttt{model},
+\texttt{capability},
+\texttt{role},
+\texttt{trust\_tier}
+\}
+\]
+
+Objects are structured records:
+
+\[
+o =
+\{
+\texttt{action},
+\texttt{channel},
+\texttt{destination},
+\texttt{audience},
+\texttt{persistence}
+\}
+\]
+
+\subsection{Alignment Fact Calculator (AFC)}
+
+AFC computes a set of structured alignment facts:
+
+\[
+F = \text{AFC}(x, s, o, C)
+\]
+
+\subsubsection{Evidence Representation}
+
+Each fact is represented as:
+
+\[
+\text{Evidence}(T) =
+\langle
+v, \sigma, m, c, \tau
+\rangle
+\]
+
+where:
+
+\begin{itemize}
+\item $v$ is the measured value,
+\item $\sigma$ is the evidence source (local, callee),
+\item $m$ is the detection method identifier,
+\item $c \in [0,1]$ is the confidence score,
+\item $\tau$ is a timestamp.
+\end{itemize}
+
+Facts are grouped into typed namespaces:
+
+\begin{itemize}
+\item \textbf{DLP facts:} PII, secrets, credential matches
+\item \textbf{Safety facts:} harm category scores
+\item \textbf{Schema facts:} structural validation results
+\item \textbf{Grounding facts:} citation support metrics
+\item \textbf{Tooltrace facts:} attempted external actions
+\item \textbf{Risk facts:} aggregated alignment risk indicators
+\end{itemize}
+
+\subsubsection{Streaming Fact Calculation}
+
+For streaming outputs, AFC computes prefix facts:
+
+\[
+F_t = \text{AFC}(x_{1:t})
+\]
+
+where $x_{1:t}$ denotes the output prefix at time $t$.
+
+AFC maintains bounded internal state for streaming inspection and produces incremental
+Fact Bundles.
+
+\subsection{Emission Security Policy (ESP)}
+
+ESP evaluates alignment authorization via the decision function:
+
+\[
+d = \text{ESP}(s, o, F)
+\]
+
+\subsubsection{Decision Algebra}
+
+Decisions belong to:
+
+\[
+D =
+\{
+\texttt{ALLOW},
+\texttt{DENY},
+\texttt{REDACT},
+\texttt{DEFER},
+\texttt{REQUIRE\_HUMAN},
+\texttt{DOWNGRADE}
+\}
+\]
+
+Each decision includes:
+
+\begin{itemize}
+\item \textbf{obligations}: transformation or logging requirements,
+\item \textbf{reason codes}: policy justification identifiers,
+\item \textbf{trace}: rule evaluation trace.
+\end{itemize}
+
+\subsubsection{Policy Representation}
+
+Policies consist of ordered rules:
+
+\[
+r_i = \langle effect_i, action_i, predicate_i, obligations_i \rangle
+\]
+
+where:
+
+\begin{itemize}
+\item $effect_i$ is a decision effect,
+\item $action_i$ matches object actions,
+\item $predicate_i$ is a boolean expression over $(s, o, F)$,
+\item $obligations_i$ defines post-processing requirements.
+\end{itemize}
+
+\subsubsection{Evaluation Semantics}
+
+Policy evaluation is defined as:
+
+\begin{enumerate}
+\item Rules are evaluated in deterministic order.
+\item The first matching rule produces the decision.
+\item Deny overrides semantics apply.
+\item If no rule matches, the decision is \texttt{DENY}.
+\end{enumerate}
+
+ESP evaluation is total and free of external calls.
+
+\subsection{Streaming Enforcement Protocol}
+
+For streaming generation:
+
+\begin{enumerate}
+\item Chai produces output prefix $x_{1:t}$.
+\item AFC computes prefix facts $F_t$.
+\item ESP computes decision $d_t = \text{ESP}(s, o, F_t)$.
+\item Runtime executes:
+\begin{itemize}
+\item emit prefix if $d_t = \texttt{ALLOW}$,
+\item buffer prefix if $d_t = \texttt{DEFER}$,
+\item transform prefix if $d_t = \texttt{REDACT}$,
+\item drop prefix if $d_t = \texttt{DENY}$.
+\end{itemize}
+\end{enumerate}
+
+\subsection{Security Invariants}
+
+The architecture enforces the following invariants:
+
+\begin{itemize}
+\item \textbf{Fail-closed emission:} no output is emitted without policy approval.
+\item \textbf{Deterministic enforcement:} policy evaluation is deterministic and reproducible.
+\item \textbf{Separation of inference and control:} probabilistic fact calculation is separated from deterministic enforcement.
+\item \textbf{Auditability:} all emission decisions are traceable to policy rules.
+\end{itemize}

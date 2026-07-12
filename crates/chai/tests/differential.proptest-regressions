@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc b352939aaf3179ac6d823f22d1bdb4eeb9b5ab5a7fe05402a8f4a1756c82e4b8 # shrinks to public = [false, false], photo_parents = [0, 0], user_groups = [0, 0], user_addr = [0, 0], a0_parent_a1 = true, req = (0, 0, 2), rules = [(false, 0, 0, 3, false, false, false, false), (true, 0, 0, 3, false, false, true, false)]
+cc fc91ef23184d2ec9afc7281fa78c4042df4788dd42794fa3ff33c589b35b88de # shrinks to public = [false, false], photo_parents = [0, 0], user_groups = [0, 0], user_addr = [0, 0], a0_parent_a1 = true, req = (0, 0, 2), rules = [(true, 0, 0, 0, true, false, false, false), (false, 0, 0, 3, false, false, false, false)]

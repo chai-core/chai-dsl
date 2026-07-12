@@ -1,0 +1,19 @@
+binds:
+- port: 3000
+  listeners:
+  - routes:
+    - policies:
+        extAuthz:
+          host: host.docker.internal:8731
+          protocol:
+            http:
+              path: '"/extauthz"'
+          includeRequestBody: {maxRequestBytes: 8192, allowPartialMessage: true}
+      backends:
+      - mcp:
+          targets:
+          - name: backend
+            mcp:
+              host: host.docker.internal
+              port: 9000
+              path: /mcp

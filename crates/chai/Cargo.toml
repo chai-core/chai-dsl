@@ -1,0 +1,64 @@
+# Package name stays `chai_dsl` so the wasm artifact (`chai_dsl.wasm`) and every
+# integration / doc / CI reference keep working. The directory is `crates/chai`.
+[package]
+name = "chai_dsl"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "A small, verified policy language for governing what AI agents do and emit."
+
+# cdylib so the engine can compile to a wasm module for the browser playground;
+# rlib so the bin/examples/tests still link it normally.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+server = ["dep:axum", "dep:tokio", "dep:tower"]
+# Forward SMT analysis to chai-core (where smt.rs lives).
+smt = ["chai-core/smt"]
+cedar-diff = ["dep:cedar-policy"]
+postgres = ["dep:postgres"]
+redis = ["dep:redis"]
+wasm = []
+capi = []
+icap = []
+grpc = ["dep:tonic", "dep:prost", "dep:envoy-types", "dep:tokio"]
+
+[dependencies]
+chai-core = { path = "../chai-core" }
+pest = "2.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+axum = { version = "0.7", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"], optional = true }
+tower = { version = "0.5", features = ["util"], optional = true }
+cedar-policy = { version = "4", optional = true }
+postgres = { version = "0.19", optional = true }
+redis = { version = "0.27", optional = true }
+tonic = { version = "0.14", optional = true }
+prost = { version = "0.14", optional = true }
+envoy-types = { version = "0.7", optional = true }
+
+[dev-dependencies]
+criterion = "0.5"
+proptest = "1"
+
+[[bench]]
+name = "evaluation"
+harness = false
+
+[[bench]]
+name = "authorization"
+harness = false
+
+[[bench]]
+name = "streaming"
+harness = false
+
+[[example]]
+name = "sidecar"
+required-features = ["server"]
+
+[[example]]
+name = "icap"
+required-features = ["icap"]

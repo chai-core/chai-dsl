@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://chai-core.github.io/chai-dsl/sitemap.xml

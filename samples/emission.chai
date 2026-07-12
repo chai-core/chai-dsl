@@ -1,0 +1,6 @@
+# Output-emission governance: block secrets, redact PII, halt on harm, else allow.
+@id("secret") deny when dlp_facts.secrets_found == true
+@id("harm") require_human when safety_facts.harm > 0.7
+@id("pii") redact when dlp_facts.pii_confidence > 0.4
+@id("exfil") forbid when tooltrace.tainted_sink == true
+@id("clean") permit when dlp_facts.pii_confidence <= 0.4

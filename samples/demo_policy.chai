@@ -1,0 +1,3 @@
+@id("admin")  permit when subject.role == "admin"
+@id("dead")   permit when subject.trust_tier > 5 and subject.trust_tier < 3
+@id("secret") deny   when dlp_facts.secrets_found == true

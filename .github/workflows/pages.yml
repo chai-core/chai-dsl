@@ -1,0 +1,56 @@
+name: Deploy playground to Pages
+
+# Builds the engine to WASM from source and publishes the browser playground.
+# The served wasm is always freshly built here, so it never drifts from the code.
+# Site lands at https://chai-core.github.io/chai-dsl/ (index.html = REPL, tour.html = guide).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Build engine to WASM
+        run: cargo build -p chai_dsl --release --target wasm32-unknown-unknown --features wasm --lib
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp integrations/playground/index.html _site/index.html
+          cp integrations/playground/tour.html  _site/tour.html
+          cp integrations/playground/chai.png    _site/chai.png
+          cp integrations/playground/robots.txt  _site/robots.txt
+          cp integrations/playground/sitemap.xml _site/sitemap.xml
+          cp target/wasm32-unknown-unknown/release/chai_dsl.wasm _site/chai_dsl.wasm
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

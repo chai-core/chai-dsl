@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chai — a verified policy language for governing what AI agents emit</title>
+<meta name="description" content="Chai is a readable, Cedar-shaped policy language and fail-closed streaming runtime for governing what an AI agent may emit. Try it in the browser: the engine runs entirely in WASM, no backend." />
+<link rel="canonical" href="https://chai-core.github.io/chai-dsl/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Chai" />
+<meta property="og:title" content="Chai — a verified policy language for governing what AI agents emit" />
+<meta property="og:description" content="Readable, Cedar-shaped policy language and fail-closed streaming runtime for AI-agent emission. Try the engine live in your browser, running as WASM with no backend." />
+<meta property="og:url" content="https://chai-core.github.io/chai-dsl/" />
+<meta property="og:image" content="https://chai-core.github.io/chai-dsl/chai.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Chai — a verified policy language for governing what AI agents emit" />
+<meta name="twitter:description" content="Readable, Cedar-shaped policy language and fail-closed streaming runtime for AI-agent emission. Try the engine live in your browser." />
+<meta name="twitter:image" content="https://chai-core.github.io/chai-dsl/chai.png" />
+<link rel="icon" href="chai.png" />
+<style>
+  :root { --bg:#0f1115; --panel:#171a21; --ink:#e6e6e6; --muted:#8b93a7; --line:#262b36; --accent:#2d6cdf; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  header { display:flex; align-items:center; gap:12px; padding:14px 20px 10px; }
+  header img { width:56px; height:56px; border-radius:10px; box-shadow:0 1px 8px rgba(0,0,0,.4); }
+  header h1 { margin:0; font-size:20px; letter-spacing:.5px; } header p { margin:3px 0 0; color:var(--muted); }
+  header code { color:var(--ink); }
+
+  .seg { display:inline-flex; margin:0 20px 0; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { background:transparent; border:0; color:var(--muted); padding:7px 16px; cursor:pointer; font:inherit; }
+  .seg button.active { background:var(--accent); color:#fff; }
+
+  .wrap { padding:16px 20px; display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; }
+  .panel h3 { margin:0 0 10px; font-size:13px; color:var(--muted); font-weight:600; }
+  .hidden { display:none; }
+  label { color:var(--muted); }
+
+  /* builder */
+  .brow { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .brow .muted { color:var(--muted); }
+  input, select, textarea { background:#0b0d11; color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:8px 9px; font:inherit; }
+  select { cursor:pointer; }
+  .bid { width:120px; } .bcond { flex:1; min-width:220px; }
+  textarea { width:100%; resize:vertical; }
+  #rawpolicy { height:200px; } #ctx { height:150px; }
+  .berr { color:#f87171; margin-top:8px; min-height:18px; }
+
+  .ruleitem { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; margin-top:6px; }
+  .ruleitem code { color:var(--ink); overflow-x:auto; }
+
+  .row { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .bar { margin-top:12px; } .bar button { margin-right:8px; }
+  button.primary { background:var(--accent); color:#fff; border:0; padding:8px 16px; border-radius:6px; cursor:pointer; font:inherit; }
+  button.primary:hover { background:#3b78e8; }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--muted); padding:8px 13px; border-radius:6px; cursor:pointer; font:inherit; }
+  button.ghost:hover { color:var(--ink); }
+  button.mini { background:transparent; border:1px solid var(--line); color:var(--muted); padding:1px 8px; font-size:12px; border-radius:5px; cursor:pointer; }
+  #out { margin-top:10px; padding:11px; border-radius:6px; border:1px solid var(--line); background:#0b0d11; white-space:pre-wrap; }
+  .allow { color:#4ade80; font-weight:700; } .deny { color:#f87171; font-weight:700; } .other { color:#fbbf24; font-weight:700; }
+  .muted { color:var(--muted); }
+  .ac { position:absolute; left:0; right:0; top:100%; background:#0b0d11; border:1px solid var(--line); border-radius:6px; margin-top:4px; max-height:170px; overflow-y:auto; z-index:5; }
+  .ac div { padding:5px 10px; cursor:pointer; color:var(--muted); }
+  .ac div.sel, .ac div:hover { background:#1d2230; color:var(--ink); }
+  .help { margin:10px 20px 0; border:1px solid var(--line); border-radius:8px; background:var(--panel); padding:10px 14px; }
+  .help summary { cursor:pointer; color:var(--muted); } .help[open] summary { color:var(--ink); margin-bottom:8px; }
+  .help b { color:var(--ink); } .help code { color:var(--ink); }
+  .chip { display:inline-block; border:1px solid var(--line); border-radius:14px; padding:3px 10px; margin:3px 6px 3px 0; cursor:pointer; color:var(--muted); }
+  .chip:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <img src="chai.png" alt="" />
+  <div>
+    <h1>Chai</h1>
+    <p>Build a policy, give a request, see the decision; runs locally in your browser.
+       New here? Take the <a href="tour.html">guided Tour of Chai →</a></p>
+  </div>
+</header>
+
+<div class="seg">
+  <button id="seg-guided" class="active" onclick="setMode('guided')">Guided</button>
+  <button id="seg-raw" onclick="setMode('raw')">Raw</button>
+</div>
+
+<details class="help">
+  <summary>Help &amp; examples</summary>
+  <div>
+    <b>Effects:</b> permit (allow) · forbid/deny (block) · redact (mask) · defer (hold) · downgrade · require_human (halt). Most-restrictive wins; no rule matches ⇒ deny.<br>
+    <b>Conditions:</b> <code>== != &lt; &lt;= &gt; &gt;=</code>, <code>and or not</code>, <code>in</code>, <code>contains</code>, <code>is</code> (e.g. <code>subject.trust_tier &gt;= 3 and resource.is_public</code>)<br>
+    <b>Request fields:</b> <code>subject.*</code>, <code>resource.*</code>, <code>action</code>, <code>principal</code>, <code>args.*</code>, <code>context.*</code><br>
+    <b>Alignment facts:</b> <code>dlp_facts.pii_confidence</code>, <code>dlp_facts.secrets_found</code>, <code>safety_facts.harm</code>, <code>tooltrace.tainted_sink</code>, <code>risk_facts.score</code>
+    <div style="margin-top:8px"><b>Click to add an example rule:</b><br>
+      <span class="chip" onclick="addExample('permit when subject.trust_tier >= 3')">permit trusted</span>
+      <span class="chip" onclick="addExample('deny when dlp_facts.secrets_found == true')">deny secrets</span>
+      <span class="chip" onclick="addExample('redact when dlp_facts.pii_confidence > 0.4')">redact PII</span>
+      <span class="chip" onclick="addExample('forbid when tooltrace.tainted_sink == true')">block exfiltration</span>
+      <span class="chip" onclick="addExample('require_human when safety_facts.harm > 0.7')">review harmful</span>
+    </div>
+  </div>
+</details>
+
+<div class="wrap">
+  <!-- LEFT: policy authoring -->
+  <div>
+    <!-- GUIDED -->
+    <div id="guided">
+      <div class="panel">
+        <h3>Add a rule</h3>
+        <div class="brow">
+          <span class="muted">@id("</span><input id="bid" class="bid" placeholder="optional id" /><span class="muted">")</span>
+          <select id="beffect">
+            <option>permit</option><option>forbid</option><option>deny</option>
+            <option>redact</option><option>defer</option><option>downgrade</option><option>require_human</option>
+          </select>
+          <span class="muted">when</span>
+          <div style="flex:1; position:relative; min-width:220px">
+            <input id="bcond" class="bcond" style="width:100%" placeholder="subject.trust_tier >= 3   (blank = always)" autocomplete="off" />
+            <div id="ac" class="ac hidden"></div>
+          </div>
+          <button class="primary" onclick="addRule()">+ Add</button>
+        </div>
+        <div id="berr" class="berr"></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <h3>Policy (<span id="rulecount">0</span> rules)</h3>
+        <div id="rulelist"></div>
+      </div>
+    </div>
+    <!-- RAW -->
+    <div id="raw" class="hidden">
+      <div class="panel">
+        <div class="row"><label>Policy (raw)</label><button class="mini" onclick="copyEl('rawpolicy', this)">copy</button></div>
+        <textarea id="rawpolicy" placeholder="one rule per line, or separate with ;"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: request + decision -->
+  <div>
+    <div class="panel">
+      <div class="row"><label>Request context (JSON)</label><button class="mini" onclick="copyEl('ctx', this)">copy</button></div>
+      <textarea id="ctx">{
+  "subject": { "trust_tier": 4 },
+  "action": "write",
+  "dlp_facts": { "pii_confidence": 0.6, "secrets_found": false }
+}</textarea>
+      <div class="bar">
+        <button class="primary" onclick="evaluateNow()">Evaluate</button>
+        <button class="ghost" onclick="shareLink(this)">Share</button>
+        <button class="ghost" onclick="exportTest()">Export test</button>
+        <button class="ghost" onclick="copyEl('out', this)">Copy result</button>
+      </div>
+      <div id="out" class="muted">decision will appear here…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let evaluate = null, ready = false;
+const enc = new TextEncoder(), dec = new TextDecoder();
+(async () => {
+  const bytes = await (await fetch('./chai_dsl.wasm')).arrayBuffer();
+  const { instance: i } = await WebAssembly.instantiate(bytes, {});
+  const w = i.exports;
+  evaluate = (policy, context) => {
+    const pb = enc.encode(policy), cb = enc.encode(context);
+    const pp = w.chai_alloc(pb.length); new Uint8Array(w.memory.buffer, pp, pb.length).set(pb);
+    const cp = w.chai_alloc(cb.length); new Uint8Array(w.memory.buffer, cp, cb.length).set(cb);
+    const o = w.chai_evaluate(pp, pb.length, cp, cb.length);
+    const len = new DataView(w.memory.buffer).getUint32(o, true);
+    const s = dec.decode(new Uint8Array(w.memory.buffer, o + 4, len));
+    w.chai_free(pp, pb.length); w.chai_free(cp, cb.length); w.chai_free(o, 4 + len);
+    return JSON.parse(s);
+  };
+  ready = true;
+  restore();
+  renderRules();
+})();
+
+function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+// --- state ---
+let rules = [];
+let guided = true;
+function currentPolicy() { return guided ? (rules.length ? rules.join('\n') : 'forbid when false') : (document.getElementById('rawpolicy').value || 'forbid when false'); }
+
+// --- mode toggle ---
+function setMode(m) {
+  if (m === 'raw' && guided) document.getElementById('rawpolicy').value = rules.join('\n');
+  if (m === 'guided' && !guided) { rules = document.getElementById('rawpolicy').value.split(/[\n;]+/).map(s => s.trim()).filter(Boolean); renderRules(); }
+  guided = (m === 'guided');
+  document.getElementById('guided').classList.toggle('hidden', !guided);
+  document.getElementById('raw').classList.toggle('hidden', guided);
+  document.getElementById('seg-guided').classList.toggle('active', guided);
+  document.getElementById('seg-raw').classList.toggle('active', !guided);
+}
+
+// --- guided builder ---
+function addRule() {
+  if (!ready) return;
+  const id = document.getElementById('bid').value.trim();
+  const eff = document.getElementById('beffect').value;
+  const cond = document.getElementById('bcond').value.trim();
+  const rule = (id ? '@id("' + id + '") ' : '') + eff + (cond ? ' when ' + cond : '');
+  const probe = evaluate(rules.concat([rule]).join('\n'), '{}');
+  const errEl = document.getElementById('berr');
+  if (probe.parse_error) { errEl.textContent = 'not added: ' + probe.parse_error.split('\n')[0]; return; }
+  errEl.textContent = '';
+  rules.push(rule); renderRules();
+  document.getElementById('bid').value = ''; document.getElementById('bcond').value = '';
+}
+function renderRules() {
+  const el = document.getElementById('rulelist');
+  document.getElementById('rulecount').textContent = rules.length;
+  el.innerHTML = rules.length
+    ? rules.map((r, i) => '<div class="ruleitem"><code>' + esc(r) + '</code><button class="mini" onclick="removeRule(' + i + ')">✕</button></div>').join('')
+    : '<span class="muted">no rules yet; defaults to deny</span>';
+}
+function removeRule(i) { rules.splice(i, 1); renderRules(); }
+function addExample(rule) {
+  if (!ready) return;
+  if (!guided) { const ta = document.getElementById('rawpolicy'); ta.value = (ta.value.trim() ? ta.value.replace(/\s*$/, '') + '\n' : '') + rule; return; }
+  const probe = evaluate(rules.concat([rule]).join('\n'), '{}');
+  if (!probe.parse_error) { rules.push(rule); renderRules(); }
+}
+
+// --- evaluate ---
+function evaluateNow() {
+  const out = document.getElementById('out');
+  if (!ready) { out.textContent = 'engine still loading…'; return; }
+  const ctx = document.getElementById('ctx').value;
+  try { JSON.parse(ctx); } catch (e) { out.className = ''; out.innerHTML = '<span class="deny">context is not valid JSON: ' + esc(e.message) + '</span>'; return; }
+  const d = evaluate(currentPolicy(), ctx);
+  out.className = '';
+  if (d.parse_error) { out.innerHTML = '<span class="deny">policy parse error:\n' + esc(d.parse_error) + '</span>'; return; }
+  const cls = d.effect === 'Allow' ? 'allow' : (d.effect === 'Deny' ? 'deny' : 'other');
+  let h = '<span class="' + cls + '">' + d.effect + '</span>  <span class="muted">' + esc(d.reason) + '</span>';
+  if (d.rule_trace && d.rule_trace.length) h += '\nrules: ' + esc(d.rule_trace.join(', '));
+  if (d.errors && d.errors.length) h += '\n<span class="deny">errors: ' + esc(d.errors.join('; ')) + '</span>';
+  out.innerHTML = h;
+}
+
+// --- copy / share / export ---
+function flashBtn(b, m) { if (!b) return; const t = b.textContent; b.textContent = m || '✓'; setTimeout(() => b.textContent = t, 900); }
+function copyEl(id, b) { const el = document.getElementById(id); const t = el.value !== undefined ? el.value : el.textContent; navigator.clipboard.writeText(t).then(() => flashBtn(b, 'copied')); }
+function shareLink(b) {
+  const payload = { r: currentPolicy(), c: document.getElementById('ctx').value };
+  location.hash = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  navigator.clipboard.writeText(location.href).then(() => flashBtn(b, 'link copied'));
+}
+function exportTest() {
+  const ctxText = document.getElementById('ctx').value;
+  let context; try { context = JSON.parse(ctxText); } catch (e) { return; }
+  const effect = ready ? (evaluate(currentPolicy(), ctxText).effect || 'Deny') : 'Deny';
+  const test = { policy: currentPolicy(), scenarios: [{ name: 'scenario 1', context, expect: effect }] };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(test, null, 2)], { type: 'application/json' }));
+  a.download = 'chai.tests.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+function restore() {
+  if (location.hash.length > 1) {
+    try {
+      const d = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(1)))));
+      if (d.r != null) rules = d.r.split(/[\n;]+/).map(s => s.trim()).filter(Boolean);
+      if (d.c != null) document.getElementById('ctx').value = d.c;
+    } catch (e) {}
+  }
+}
+
+// --- autocomplete on the condition field ---
+const VOCAB = ['when', 'and', 'or', 'not', 'in', 'contains', 'is', 'has', 'like',
+  'subject', 'resource', 'action', 'principal', 'context', 'args',
+  'dlp_facts', 'safety_facts', 'tooltrace', 'risk_facts', 'grounding_facts', 'schema_facts'];
+const cond = document.getElementById('bcond'), ac = document.getElementById('ac');
+let acItems = [], acSel = -1;
+function curWord() { const m = cond.value.slice(0, cond.selectionStart).match(/[A-Za-z_][\w.]*$/); return m ? m[0] : ''; }
+function showAc() {
+  const w = curWord();
+  acItems = w ? VOCAB.filter(x => x.startsWith(w) && x !== w).slice(0, 8) : [];
+  if (!acItems.length) return hideAc();
+  acSel = 0;
+  ac.innerHTML = acItems.map((x, i) => '<div class="' + (i === 0 ? 'sel' : '') + '" data-i="' + i + '">' + x + '</div>').join('');
+  ac.classList.remove('hidden');
+}
+function hideAc() { ac.classList.add('hidden'); acItems = []; acSel = -1; }
+function complete(i) {
+  const w = curWord(), pos = cond.selectionStart;
+  cond.value = cond.value.slice(0, pos - w.length) + acItems[i] + cond.value.slice(pos);
+  hideAc();
+}
+cond.addEventListener('input', showAc);
+ac.addEventListener('mousedown', e => { const d = e.target.closest('[data-i]'); if (d) { e.preventDefault(); complete(+d.dataset.i); cond.focus(); } });
+cond.addEventListener('keydown', e => {
+  if (!ac.classList.contains('hidden') && acItems.length) {
+    if (e.key === 'Tab') { e.preventDefault(); complete(acSel < 0 ? 0 : acSel); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); acSel = (acSel + 1) % acItems.length; [...ac.children].forEach((c, i) => c.classList.toggle('sel', i === acSel)); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); acSel = (acSel - 1 + acItems.length) % acItems.length; [...ac.children].forEach((c, i) => c.classList.toggle('sel', i === acSel)); return; }
+    if (e.key === 'Escape') return hideAc();
+  }
+  if (e.key === 'Enter') { hideAc(); addRule(); }
+});
+</script>
+</body>
+</html>

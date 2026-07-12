@@ -1,0 +1,49 @@
+# Rust build output
+/target
+
+# Vendored Cedar baseline (Apache-2.0), used only for the same-machine
+# benchmark. Clone github.com/cedar-policy/cedar here if you want to run it.
+# Not part of this project, and too large to commit.
+/third_party/
+
+# Downloaded third-party PDFs (cite them, do not redistribute)
+/papers/
+
+# Python eval environment and caches
+eval/.venv/
+**/__pycache__/
+*.pyc
+
+# Lean proof build output
+formal/.lake/
+
+# LaTeX build artifacts (the paper builds from paper.tex)
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/*.toc
+paper/paper.pdf
+
+# Node (integration clients)
+node_modules/
+
+# OS and editor cruft
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Internal planning/strategy, the code-eval framework, and the in-progress
+# (double-blind) paper: kept local, not published. Delete an entry to publish it.
+/next_plan.md
+/updated_plan.tex
+/popl_plan.md
+/CODE_EVAL_RESULTS.md
+/code_eval/
+/paper/
+/goal
+/STATUS.md
+/code-review.md

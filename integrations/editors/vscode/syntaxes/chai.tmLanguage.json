@@ -1,0 +1,91 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Chai",
+  "scopeName": "source.chai",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#annotation" },
+    { "include": "#string" },
+    { "include": "#mode" },
+    { "include": "#effect" },
+    { "include": "#control" },
+    { "include": "#logical" },
+    { "include": "#constant" },
+    { "include": "#entity" },
+    { "include": "#function" },
+    { "include": "#root" },
+    { "include": "#field" },
+    { "include": "#slot" },
+    { "include": "#number" },
+    { "include": "#operator" }
+  ],
+  "repository": {
+    "comment": {
+      "match": "#.*$",
+      "name": "comment.line.number-sign.chai"
+    },
+    "string": {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.chai"
+    },
+    "annotation": {
+      "match": "(@)([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": { "name": "punctuation.definition.annotation.chai" },
+        "2": { "name": "entity.name.tag.annotation.chai" }
+      }
+    },
+    "mode": {
+      "match": "\\b(mode|first_match|deny_override)\\b",
+      "name": "keyword.other.mode.chai"
+    },
+    "effect": {
+      "match": "\\b(permit|forbid|deny|redact|defer|downgrade|require_human)\\b",
+      "name": "keyword.control.effect.chai"
+    },
+    "control": {
+      "match": "\\b(when|from|to|action|any|obligations|required|requisite|sufficient|optional)\\b",
+      "name": "keyword.control.chai"
+    },
+    "logical": {
+      "match": "\\b(and|or|not|in|has|contains|like|is)\\b",
+      "name": "keyword.operator.word.chai"
+    },
+    "constant": {
+      "match": "\\b(true|false)\\b",
+      "name": "constant.language.chai"
+    },
+    "entity": {
+      "match": "\\b([A-Za-z_][A-Za-z0-9_]*)(::[A-Za-z_][A-Za-z0-9_]*)*(::)(?=\")",
+      "name": "entity.name.type.chai"
+    },
+    "function": {
+      "match": "\\b(ip|decimal|size|len|containsAll|containsAny|isInRange|isLoopback|isMulticast|isIpv4|isIpv6|lessThan|lessThanOrEqual|greaterThan|greaterThanOrEqual)\\b",
+      "name": "support.function.chai"
+    },
+    "root": {
+      "match": "\\b(principal|action|resource|subject|object|context|args|dlp_facts|safety_facts|grounding_facts|schema_facts|tooltrace|risk_facts|thresholds)\\b",
+      "name": "variable.language.chai"
+    },
+    "field": {
+      "match": "(\\.)([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": { "name": "punctuation.accessor.chai" },
+        "2": { "name": "variable.other.member.chai" }
+      }
+    },
+    "slot": {
+      "match": "\\?[A-Za-z_][A-Za-z0-9_]*",
+      "name": "variable.parameter.slot.chai"
+    },
+    "number": {
+      "match": "\\b-?[0-9]+(\\.[0-9]+)?\\b",
+      "name": "constant.numeric.chai"
+    },
+    "operator": {
+      "match": "==|!=|<=|>=|<|>|&&|\\|\\||!|\\+|-|\\*|/|%",
+      "name": "keyword.operator.chai"
+    }
+  }
+}

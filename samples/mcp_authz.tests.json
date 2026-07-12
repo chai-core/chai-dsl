@@ -1,0 +1,10 @@
+{
+  "policy_file": "samples/mcp_authz.chai",
+  "scenarios": [
+    {"name": "trusted read allowed", "context": {"subject": {"trust_tier": 4}, "action": "db.read", "args": {"limit": 10}}, "expect": "Allow"},
+    {"name": "untrusted blocked",    "context": {"subject": {"trust_tier": 1}, "action": "db.read", "args": {}}, "expect": "Deny"},
+    {"name": "bulk blocked",         "context": {"subject": {"trust_tier": 9}, "action": "db.read", "args": {"limit": 500}}, "expect": "Deny"},
+    {"name": "write needs tier 5",   "context": {"subject": {"trust_tier": 4}, "action": "db.write", "args": {}}, "expect": "Deny"},
+    {"name": "tier5 write allowed",  "context": {"subject": {"trust_tier": 5}, "action": "db.write", "args": {}}, "expect": "Allow"}
+  ]
+}

@@ -1,0 +1,22 @@
+[package]
+name = "chai-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "The verified decision-and-emission engine for Chai (parser, evaluator, emission, analysis)."
+
+[lib]
+
+[features]
+# SMT-based policy analysis (pulls z3). Behind a flag so a default build never
+# needs libz3.
+smt = ["dep:z3"]
+
+[dependencies]
+pest = "2.7"
+pest_derive = "2.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+regex = "1"
+z3 = { version = "0.12", optional = true }

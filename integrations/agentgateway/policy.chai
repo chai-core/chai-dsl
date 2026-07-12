@@ -1,0 +1,2 @@
+@id("no-write") forbid when action == "write"
+@id("ok")       permit when true

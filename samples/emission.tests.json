@@ -1,0 +1,10 @@
+{
+  "policy_file": "samples/emission.chai",
+  "scenarios": [
+    {"name": "clean text emitted",  "context": {"dlp_facts": {"pii_confidence": 0.1, "secrets_found": false}}, "expect": "Allow"},
+    {"name": "pii redacted",        "context": {"dlp_facts": {"pii_confidence": 0.6, "secrets_found": false}}, "expect": "Redact"},
+    {"name": "secret blocked",      "context": {"dlp_facts": {"secrets_found": true}}, "expect": "Deny"},
+    {"name": "harm needs human",    "context": {"safety_facts": {"harm": 0.9}, "dlp_facts": {"pii_confidence": 0.1, "secrets_found": false}}, "expect": "RequireHuman"},
+    {"name": "exfiltration blocked","context": {"tooltrace": {"tainted_sink": true}, "dlp_facts": {"pii_confidence": 0.1, "secrets_found": false}}, "expect": "Deny"}
+  ]
+}

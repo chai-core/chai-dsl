@@ -1,0 +1,9 @@
+# Suite-agnostic tool-call authorization. `subject.sensitive` is an input fact (the
+# gate classifies a state-changing/irreversible tool by name, like a detector), and
+# `subject.tainted` is true once the agent has consumed untrusted external tool
+# output that could carry an injected instruction. A sensitive action from a tainted
+# session is FORBIDDEN, so an injection cannot drive a harmful action. Read-only or
+# untainted calls are allowed. Capability/taint discipline (cf. CaMeL/FIDES) as a
+# Chai policy over the tool-call channel.
+@id("tainted-sensitive") forbid when subject.tainted == true and subject.sensitive == true
+@id("allow")             permit when true
